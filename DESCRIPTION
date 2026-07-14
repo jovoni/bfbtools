@@ -1,0 +1,30 @@
+Package: bfbtools
+Type: Package
+Title: Linear-Time Breakage-Fusion-Bridge Count-Vector Algorithms
+Version: 0.1.0
+Authors@R: person("Giovanni", "Santacatterina", email = "you@example.com", role = c("aut", "cre"))
+Description: Provides linear-time algorithms for deciding whether a
+    chromosomal segment copy-number count-vector is consistent with the
+    breakage-fusion-bridge (BFB) mechanism, and for finding the closest
+    BFB-admitting count-vector to a noisy observed one under a
+    probabilistic error model. Ported from the reference Java
+    implementation of Zakov, Kinsella & Bafna (2013, "An algorithmic
+    approach for breakage-fusion-bridge detection in tumor genomes",
+    PNAS 110(14):5546-5551), building on Kinsella & Bafna (2012,
+    "Combinatorics of the Breakage-Fusion-Bridge Mechanism", J. Comput.
+    Biol. 19(6):662-678). Part of the bfbtools/bfbgill/bridges family:
+    this package is the sim-agnostic detection library (no dependency
+    on any particular simulator); bfbgill provides Gillespie-based BFB
+    simulation; bridges provides fitting, plotting, and batch detection
+    glue code on top of both.
+License: GPL-3
+Encoding: UTF-8
+Imports: Rcpp
+LinkingTo: Rcpp
+RoxygenNote: 7.3.3
+Suggests: testthat (>= 3.0.0)
+Config/testthat/edition: 3
+NeedsCompilation: yes
+Packaged: 2026-07-13 14:16:11 UTC; root
+Author: Giovanni Santacatterina [aut, cre]
+Maintainer: Giovanni Santacatterina <you@example.com>

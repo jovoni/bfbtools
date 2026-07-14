@@ -1,0 +1,17 @@
+This package is licensed under the GNU General Public License v3.0.
+See https://www.gnu.org/licenses/gpl-3.0.en.html for the full text.
+
+It is a derivative work of BFBFinder (https://github.com/shay-zakov/BFBFinder),
+Copyright (C) 2013 Shay Zakov, Marcus Kinsella, and Vineet Bafna, itself
+licensed under GPL-3.0.
+
+- src/decision.cpp: the core algorithm (decisionFold/hasPalindromeConcatenation)
+  is a line-by-line port of BFBCalculator.decisionBFB/decisionFold and
+  Signature.hasPalindromeConcatenation from that project.
+- src/distance.cpp: the weighted/noisy search is an original design (a
+  Pareto-frontier branching search built on top of the ported decisionFold
+  core above), rather than a port of BFBFinder's own noisy-search code
+  (Signature.heaviestBFBVector); the Poisson error-model weight function is
+  ported from PoissonErrorModel.weight(). As a combined/derivative work
+  incorporating GPL-3.0 code, this file is likewise distributed under
+  GPL-3.0.

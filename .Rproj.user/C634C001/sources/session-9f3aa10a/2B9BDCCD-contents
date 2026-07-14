@@ -1,0 +1,79 @@
+---
+title: "The bfbtools Algorithms"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{The bfbtools Algorithms}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+  collapse  = TRUE,
+  comment   = "#>",
+  warning   = FALSE,
+  message   = FALSE
+)
+```
+
+```{r libraries}
+library(bfbtools)
+```
+
+`bfbtools` is deliberately sim-agnostic: it has no dependency on `bfbgill` or `bridges`, and works on plain integer count-vectors. This vignette covers its three functions on their own. If you're working with real `cna_data` tibbles from simulations or single-cell sequencing, see `bridges::bfb_detect_batch()` (`vignette("batch-detection", package = "bridges")`) for the batch/tibble-aware wrapper built on top of what's shown here.
+
+---
+
+## 1  Background: what is a count-vector?
+
+A chromosome (or one arm of it) that has undergone some number of breakage-fusion-bridge cycles has a copy-number profile that, read from telomere to centromere, forms a nested palindromic structure. Collapsing consecutive equal-copy-number segments gives a **count-vector**: an ordered sequence of positive integers, one per distinct segment, e.g. `c(6, 3, 5)`.
+
+Not every count-vector can arise from a BFB schedule,  deciding whether one can is a genuine combinatorial question, and the naive way to answer it (searching over all possible schedules) is worst-case exponential in the vector's length. `bfbtools` implements the linear-time algorithm of Zakov, Kinsella & Bafna (2013, PNAS), which answers this in time proportional to the vector's length, with no search budget or backtracking ever needed.
+
+---
+
+## 2  `admits_bfb()`, does this count-vector admit a BFB schedule?
+
+```{r admits-basic}
+admits_bfb(c(6, 3, 5))               # TRUE
+admits_bfb(c(14, 7, 18, 16, 9, 12))  # FALSE,  a real near-miss example
+```
+
+This is a genuine yes/no combinatorial fact about the vector, computed exactly,  not an approximation or a statistical test. `admits_bfb()` always returns a definitive `TRUE`/`FALSE`; unlike the earlier exponential-search algorithms this package's linear-time implementation supersedes, it never needs a search-step budget or times out.
+
+### A precondition worth knowing about: trivial vectors
+
+```{r trivial}
+admits_bfb(c(1, 1))
+```
+
+This returns `TRUE`,  but not because the vector shows any real BFB signal. "Admits a BFB schedule" is true even for a schedule with *zero* breakage-fusion-bridge cycles: the untouched baseline chromosome is itself a (trivial) BFB schedule. Since every real BFB cycle is an inverted *duplication*, it necessarily pushes at least one segment's copy number above 1, so a vector where every segment sits at copy number 1 (e.g. a flat region interrupted only by a plain deletion) is uninteresting for this question, even though it technically "admits BFB". If you're screening many vectors and want to exclude this case, check `max(v) > 1` alongside `admits_bfb(v)` (this is exactly what `bridges::bfb_detect_batch()`'s `min_max_count` argument does for you automatically).
+
+---
+
+## 3  `nearest_bfb()`, how far is a noisy vector from admitting BFB?
+
+Real copy-number calls are noisy. `nearest_bfb()` finds the highest-weight BFB-admitting count-vector explaining an observed, potentially noisy vector, under a Poisson error model (observed counts modeled as noisy draws around the true count):
+
+```{r nearest-bfb}
+r <- nearest_bfb(c(14, 7, 18, 16, 9, 12))
+r
+```
+
+`weight` is in `(0, 1]`: `1` means the vector already admits BFB exactly (no correction needed); values closer to `0` mean the nearest BFB-admitting vector required larger or more numerous corrections. Because it's a **product** of per-position probabilities, `weight` mechanically shrinks as the vector gets longer even when each position matches equally well,  it's a useful number to eyeball for one vector at a time, but not for comparing vectors of different lengths.
+
+```{r bfb-distance}
+bfb_distance_weighted(c(14, 7, 18, 16, 9, 12))
+```
+
+`bfb_distance_weighted()` is `-log(weight)`: `0` for an exact match, and (unlike `weight`) a **sum** rather than a product across positions,  making it the better statistic to compare across vectors of different lengths, or to use as a response variable in downstream models.
+
+Both functions accept `model = "none"` to require an exact match only (equivalent to `admits_bfb()`, useful mainly for testing), and a `min_weight` cutoff that bounds how far the search looks before giving up (returning `NULL` if nothing is found).
+
+---
+
+## 4  A note on performance and licensing
+
+`admits_bfb()` and `nearest_bfb()` are both linear-time-core algorithms: even on inputs that make exponential-search approaches take many seconds (or fail to terminate within a reasonable budget), these resolve in milliseconds, regardless of how "hard" the specific instance is. There is no search-step budget to tune for correctness,  only `nearest_bfb()`'s `max_frontier` safety cap, which exists purely to catch genuinely pathological inputs gracefully (returning `NA` with a warning) rather than growing memory use unboundedly.
+
+`bfbtools` is GPL-3 licensed, as a derivative of the reference implementation these algorithms are ported from (Zakov, Kinsella & Bafna's own Java implementation). This is why it's kept as an independent package rather than folded into `bridges` (MIT licensed),  depending on a GPL-3 package is fine and doesn't affect `bridges`'s own license, but merging the source would.
