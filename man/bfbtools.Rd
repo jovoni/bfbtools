@@ -17,6 +17,6 @@ fitting/plotting/batch-detection glue code). All algorithmic work
 happens in C++; R functions here are thin argument-checking wrappers.
 }
 \author{
-\strong{Maintainer}: User Name \email{you@example.com}
+\strong{Maintainer}: Giovanni Santacatterina \email{you@example.com}
 
 }
